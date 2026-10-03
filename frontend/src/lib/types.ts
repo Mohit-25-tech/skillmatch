@@ -42,6 +42,7 @@ export interface Resume {
   created_at: string;
   is_primary?: boolean;
   parse_warnings?: string[];
+  experience_years?: number | null;
 }
 export interface Match {
   id: number;

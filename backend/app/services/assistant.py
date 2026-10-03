@@ -31,6 +31,7 @@ from app.services.embeddings import encode_many
 from app.services.matching import calculate_match
 from app.services.narrative import generate_why_match_narrative
 from app.services.nl_search import coerce_bool, parse_nl_query_heuristic
+from app.services.product import latest_resume
 from app.services.retrieval import hybrid_search_jobs
 from app.services.taxonomy import ALIASES
 from app.services.vectorstore import get_vector_store
@@ -364,7 +365,10 @@ class CareerAssistant:
     def __init__(self, db: Session, user: User, resume: Resume | None = None):
         self.db = db
         self.user = user
-        self.resume = resume
+        if resume is None and user and getattr(user, "role", None) == "candidate":
+            self.resume = latest_resume(db, user.id)
+        else:
+            self.resume = resume
         self.ai = get_ai_provider()
         self.settings = get_settings()
 
@@ -382,6 +386,8 @@ class CareerAssistant:
                 status="error",
                 error="Resume retrieval is only available for candidate accounts.",
             )
+        if not self.resume:
+            self.resume = latest_resume(self.db, self.user.id)
         if not self.resume:
             return ToolResultList(
                 [{"error": "No resume uploaded. Please upload a resume first."}],

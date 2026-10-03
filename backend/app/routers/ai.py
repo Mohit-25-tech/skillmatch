@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -203,9 +204,25 @@ def career_assistant_stream(
 @router.get("/assistant/context")
 def assistant_context(
     db: Session = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User | None = Depends(optional_user),
 ):
     """Provide real-time candidate profile, top matches, and dynamic suggested prompts."""
+    if not user:
+        return {
+            "candidate_name": "Candidate",
+            "has_resume": False,
+            "resume_filename": None,
+            "experience_years": 0,
+            "top_skills": [],
+            "top_matches": [],
+            "suggested_prompts": [
+                "Upload your resume to get matched",
+                "Search remote software engineering jobs",
+                "How do I build an ATS-friendly resume?",
+                "What tech skills are most in-demand?",
+            ],
+        }
+
     resume = latest_resume(db, user.id)
     top_matches = []
     top_missing_skill = ""
@@ -251,12 +268,19 @@ def assistant_context(
         suggested_prompts.append("How do I build an ATS-friendly resume?")
         suggested_prompts.append("What tech skills are most in-demand?")
 
+    top_skills: list[str] = []
+    if resume:
+        try:
+            top_skills = [getattr(s, "name", str(s)) for s in (resume.skills or [])[:6]]
+        except Exception:
+            top_skills = []
+
     return {
         "candidate_name": user.name,
         "has_resume": bool(resume),
         "resume_filename": resume.filename if resume else None,
         "experience_years": resume.experience_years if resume else 0,
-        "top_skills": [s.name for s in resume.skills[:6]] if resume else [],
+        "top_skills": top_skills,
         "top_matches": top_matches,
         "suggested_prompts": suggested_prompts,
     }
@@ -265,9 +289,11 @@ def assistant_context(
 @router.get("/chat/history")
 def get_chat_history(
     db: Session = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User | None = Depends(optional_user),
 ):
     """Retrieve candidate's conversation history."""
+    if not user:
+        return {"items": []}
     from app.models import ChatMessage
     messages = list(
         db.scalars(

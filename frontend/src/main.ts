@@ -1627,7 +1627,20 @@ async function assistantPage(): Promise<void> {
   $("dialog.workspace-dialog").remove();
   document.body.classList.remove("modal-open");
 
-  let ctx: any = { candidate_name: user?.name || "Candidate", has_resume: false, suggested_prompts: [] };
+  if (!resumes.length && user?.role === "candidate") {
+    try {
+      resumes = await api<Resume[]>("/resumes");
+    } catch {}
+  }
+
+  let ctx: any = {
+    candidate_name: user?.name || "Candidate",
+    has_resume: resumes.length > 0,
+    resume_filename: resumes[0]?.filename || null,
+    experience_years: resumes[0]?.experience_years || 0,
+    top_skills: resumes[0]?.skills?.slice(0, 6) || [],
+    suggested_prompts: [],
+  };
   let history: any[] = [];
   try {
     const [ctxData, histData] = await Promise.all([
@@ -1635,10 +1648,24 @@ async function assistantPage(): Promise<void> {
       api<{ items: any[] }>("/ai/chat/history"),
     ]);
     if (pageRender !== renderId) return;
-    ctx = ctxData || ctx;
+    if (ctxData) {
+      ctx = { ...ctx, ...ctxData };
+      if (!ctx.has_resume && resumes.length > 0) {
+        ctx.has_resume = true;
+        ctx.resume_filename = ctx.resume_filename || resumes[0]?.filename;
+        ctx.experience_years = ctx.experience_years || resumes[0]?.experience_years || 0;
+        ctx.top_skills = (ctx.top_skills && ctx.top_skills.length) ? ctx.top_skills : (resumes[0]?.skills || []).slice(0, 6);
+      }
+    }
     history = histData?.items || [];
   } catch (err) {
     console.error("Failed to load assistant context", err);
+    if (!ctx.has_resume && resumes.length > 0) {
+      ctx.has_resume = true;
+      ctx.resume_filename = resumes[0]?.filename;
+      ctx.experience_years = resumes[0]?.experience_years || 0;
+      ctx.top_skills = (resumes[0]?.skills || []).slice(0, 6);
+    }
   }
 
   const hasHistory = history.length > 0;

@@ -307,3 +307,24 @@ def test_failing_tool_gives_friendly_message_and_persists_memory(test_db: Sessio
             assert messages[0].role == "user"
             assert messages[1].role == "assistant"
             assert messages[1].content == reply
+
+
+def test_assistant_context_with_candidate_resume(test_db):
+    from app.routers.ai import assistant_context
+
+    u = User(name="Context Candidate", email="ctx@test.com", password_hash="hash", role="candidate")
+    test_db.add(u)
+    test_db.commit()
+
+    # Create active resume
+    r = Resume(user_id=u.id, filename="my_sample_resume.pdf", text="Python FastAPI React", is_primary=True, experience_years=3.5)
+    test_db.add(r)
+    test_db.commit()
+
+    ctx = assistant_context(test_db, u)
+    assert ctx["has_resume"] is True
+    assert ctx["resume_filename"] == "my_sample_resume.pdf"
+    assert ctx["experience_years"] == 3.5
+    assert ctx["candidate_name"] == "Context Candidate"
+    assert len(ctx["suggested_prompts"]) > 0
+
