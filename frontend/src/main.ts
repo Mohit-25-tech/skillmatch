@@ -62,6 +62,7 @@ import {
   Eye,
   FileCheck,
   ArrowDown,
+  Users,
 } from "lucide";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -91,6 +92,7 @@ import {
 import type {
   Analytics,
   Application,
+  CandidateProfile,
   Job,
   Match,
   Resume,
@@ -108,6 +110,7 @@ const icons = {
   Layers,
   ChartNoAxesCombined,
   Shield,
+  Users,
   CircleHelp,
   ArrowUpRight,
   LogIn,
@@ -186,7 +189,7 @@ function shell(content: string, title = "Overview"): void {
   const name = user?.name || "Guest";
   const recruiter = user?.role === "recruiter";
   $("#app").html(
-    `<aside class="sidebar">${logo()}<div class="workspace-label">YOUR WORKSPACE</div><nav aria-label="Main navigation">${link(recruiter ? "recruiter" : "dashboard", "Overview", "layout-dashboard")}${!recruiter ? link("upload", "My resume", "file-user") : link("post-job", "Post a job", "square-plus")}${link("jobs", "Find jobs", "briefcase-business")}${user?.role === "candidate" ? link("assistant", "Career Assistant", "sparkles") + link("resume-tools", "Resume tools", "file-scan") + link("matches", "My matches", "scan-line") : ""}${link("applications", recruiter ? "Candidates" : "Applications", "layers")}${link("analytics", "Insights", "chart-no-axes-combined")}${user?.role === "candidate" ? link("learning", "Learning path", "book-open") + link("saved-searches", "Saved searches", "bell") : ""}${user ? link("settings", "Settings", "pencil") : ""}${user?.role === "admin" ? link("ingestion", "Ingestion", "cloud-upload") : ""}${user?.role === "admin" ? link("admin", "Administration", "shield") : ""}</nav><div class="sidebar-bottom"><div class="career-card"><span class="tiny-spark">${icon("sparkles")}</span><strong>Your next chapter<br>starts with you.</strong><p>A little clarity. A big step forward.</p><a href="#/upload">Find your potential ${icon("arrow-up-right")}</a></div><a href="#/landing" class="help-link">${icon("circle-help")} How SkillMatch works ${icon("arrow-up-right")}</a><div class="sidebar-profile"><div class="avatar">${e(initials(name))}</div><div><strong>${e(name)}</strong><span>${e(user?.role || "Public job browser")}</span></div><button class="icon-btn" id="account-button" aria-label="${!user ? "Sign in" : "Sign out"}">${icon(!user ? "log-in" : "log-out")}</button></div></div></aside><div class="sidebar-scrim"></div><div class="app-layout"><header class="topbar"><div class="topbar-title"><button class="icon-btn menu-toggle" aria-label="Open navigation">${icon("menu")}</button><span class="breadcrumb-home">Workspace</span>${icon("chevron-right")}<strong>${e(title)}</strong></div><div class="topbar-actions"><a class="top-search" href="#/jobs">${icon("search")}<span>Search your next opportunity</span><kbd>Ctrl K</kbd></a><span class="demo-badge connection-state">${user ? "Connecting" : "Public jobs"}<span></span></span><button class="btn btn-outline btn-sm ai-assistant-btn" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 10px;border-radius:14px">${icon("sparkles")} Career Assistant</button><button class="icon-btn notification-button" aria-label="View notifications">${icon("bell")}<b class="unread-count" hidden></b></button><button class="icon-btn theme-toggle" aria-label="Toggle light or dark theme">&#9680;</button><div class="avatar small">${e(initials(name))}</div></div></header><main id="main-content" tabindex="-1">${content}</main><footer class="app-footer"><span>Made for your next move.</span><span>SkillMatch AI <span class="footer-dot">•</span> Your career, in focus ${icon("sparkles")}</span></footer></div>`,
+    `<aside class="sidebar">${logo()}<div class="workspace-label">${recruiter ? "RECRUITER WORKSPACE" : "YOUR WORKSPACE"}</div><nav aria-label="Main navigation">${link(recruiter ? "recruiter" : "dashboard", "Overview", "layout-dashboard")}${!recruiter ? link("upload", "My resume", "file-user") : link("post-job", "Post a job", "square-plus")}${!recruiter ? link("jobs", "Find jobs", "briefcase-business") : ""}${user?.role === "candidate" ? link("assistant", "Career Assistant", "sparkles") + link("resume-tools", "Resume tools", "file-scan") + link("matches", "My matches", "scan-line") : ""}${link(recruiter ? "candidates" : "applications", recruiter ? "Candidates" : "Applications", recruiter ? "users" : "layers")}${link("analytics", "Insights", "chart-no-axes-combined")}${user?.role === "candidate" ? link("learning", "Learning path", "book-open") + link("saved-searches", "Saved searches", "bell") : ""}${user && user?.role === "candidate" ? link("settings", "Settings", "pencil") : ""}${user?.role === "admin" ? link("ingestion", "Ingestion", "cloud-upload") : ""}${user?.role === "admin" ? link("admin", "Administration", "shield") : ""}</nav><div class="sidebar-bottom">${recruiter ? `<div class="career-card"><span class="tiny-spark">${icon("sparkles")}</span><strong>Build your dream team.<br>Find the right fit.</strong><p>Verified skills & AI candidate ranking.</p><a href="#/post-job">Post a new role ${icon("arrow-up-right")}</a></div>` : `<div class="career-card"><span class="tiny-spark">${icon("sparkles")}</span><strong>Your next chapter<br>starts with you.</strong><p>A little clarity. A big step forward.</p><a href="#/upload">Find your potential ${icon("arrow-up-right")}</a></div>`}<a href="#/landing" class="help-link">${icon("circle-help")} How SkillMatch works ${icon("arrow-up-right")}</a><div class="sidebar-profile"><div class="avatar">${e(initials(name))}</div><div><strong>${e(name)}</strong><span>${e(user?.role ? (recruiter ? "Recruiter / Hiring" : "Job seeker") : "Public job browser")}</span></div><button class="icon-btn" id="account-button" aria-label="${!user ? "Sign in" : "Sign out"}">${icon(!user ? "log-in" : "log-out")}</button></div></div></aside><div class="sidebar-scrim"></div><div class="app-layout"><header class="topbar"><div class="topbar-title"><button class="icon-btn menu-toggle" aria-label="Open navigation">${icon("menu")}</button><span class="breadcrumb-home">${recruiter ? "Hiring" : "Workspace"}</span>${icon("chevron-right")}<strong>${e(title)}</strong></div><div class="topbar-actions"><a class="top-search" href="${recruiter ? "#/candidates" : "#/jobs"}">${icon("search")}<span>${recruiter ? "Search candidates & talent pool" : "Search your next opportunity"}</span><kbd>Ctrl K</kbd></a><span class="demo-badge connection-state">${user ? "Connected" : "Public jobs"}<span></span></span>${!recruiter ? `<button class="btn btn-outline btn-sm ai-assistant-btn" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 10px;border-radius:14px">${icon("sparkles")} Career Assistant</button>` : `<a class="btn btn-primary btn-sm" href="#/post-job" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 12px;border-radius:14px">${icon("plus")} Post a job</a>`}<button class="icon-btn notification-button" aria-label="View notifications">${icon("bell")}<b class="unread-count" hidden></b></button><button class="icon-btn theme-toggle" aria-label="Toggle light or dark theme">&#9680;</button><div class="avatar small">${e(initials(name))}</div></div></header><main id="main-content" tabindex="-1">${content}</main><footer class="app-footer"><span>${recruiter ? "SkillMatch AI Talent Acquisition" : "Made for your next move."}</span><span>SkillMatch AI <span class="footer-dot">•</span> ${recruiter ? "Smart hiring, verified talent" : "Your career, in focus"} ${icon("sparkles")}</span></footer></div>`,
   );
   finish();
   workspace.updateBadge();
@@ -712,18 +715,70 @@ async function renderCharts(kind: string, match?: Match): Promise<void> {
   if (id === renderId)
     cleanupCharts = mountCharts(kind, analytics, match, reduced);
 }
+let cachedCandidates: CandidateProfile[] = [];
+let activeCandidateTab: "pool" | "applicants" = "pool";
+let candidateFilterSkill = "";
+let candidateSearchQuery = "";
+
+function renderTalentPool(): string {
+  let list = cachedCandidates;
+  if (candidateSearchQuery.trim()) {
+    const q = candidateSearchQuery.trim().toLowerCase();
+    list = list.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.skills.some((s) => s.toLowerCase().includes(q)) ||
+        c.headline.toLowerCase().includes(q) ||
+        c.snippet.toLowerCase().includes(q),
+    );
+  }
+  if (candidateFilterSkill) {
+    const s = candidateFilterSkill.toLowerCase();
+    list = list.filter((c) => c.skills.some((sk) => sk.toLowerCase() === s));
+  }
+  if (!list.length) {
+    return `<div class="panel" style="padding:48px 24px;text-align:center;grid-column:1/-1"><p class="subtle" style="font-size:16px;margin:0 0 12px 0">No candidates match your search filter.</p><button class="btn btn-outline btn-sm" id="btn-clear-cand-filters">Clear filters</button></div>`;
+  }
+  return list
+    .map(
+      (c) =>
+        `<div class="panel candidate-card"><div class="candidate-header"><div class="avatar">${e(initials(c.name))}</div><div><strong>${e(c.name)}</strong><span>${e(c.headline || "Candidate")}</span></div><span class="match-pill">${icon("sparkles")} ${c.match_score ? Math.round(c.match_score) + "% match" : "Verified"}</span></div><p class="candidate-snippet">${e(c.snippet)}</p><div class="candidate-meta"><span class="experience-badge">${icon("clock-3")} ${c.experience_years}y experience</span><div class="strength-chips">${c.skills.slice(0, 5).map((s) => chip(s)).join("")}${c.skills.length > 5 ? chip("+" + (c.skills.length - 5)) : ""}</div></div><div class="candidate-footer"><button class="btn btn-outline btn-sm view-candidate-btn" data-id="${c.id}">View resume</button><a class="btn btn-primary btn-sm" href="mailto:${e(c.email)}?subject=Opportunity%20via%20SkillMatch">Contact ${icon("arrow-up-right")}</a></div></div>`,
+    )
+    .join("");
+}
+
 async function applicationsPage(): Promise<void> {
   const pageRender = renderId;
   if (user?.role === "candidate") {
     await workspace.tracker();
     return;
   }
-  const applications = await api<Application[]>("/applications");
-  const recruiter = user?.role === "recruiter" || user?.role === "admin";
+  const [candidatesData, applications] = await Promise.all([
+    api<CandidateProfile[]>("/candidates"),
+    api<Application[]>("/applications"),
+  ]);
+  cachedCandidates = candidatesData;
   if (pageRender !== renderId) return;
+
+  const topSkills = [
+    "Python",
+    "React",
+    "TypeScript",
+    "Docker",
+    "DevOps",
+    "Machine Learning",
+    "SQL",
+    "Go",
+  ];
+
   shell(
-    `${heading("ONE STEP CLOSER. EVERY TIME.", recruiter ? "Meet your next great hire." : "Your next chapter, in motion.", recruiter ? "Candidates ranked by resume fit. Use scores as a starting point for a fair, human review." : "Keep track of the opportunities you’ve put yourself forward for.")}<div class="panel table-panel"><div class="table-responsive"><table class="app-table"><thead><tr><th>${recruiter ? "Candidate" : "Opportunity"}</th><th>${recruiter ? "Role" : "Company"}</th><th>Match</th><th>Status</th><th>Applied</th></tr></thead><tbody>${applications.map((a) => `<tr><td><strong>${e(recruiter ? a.candidate : a.job.title)}</strong></td><td>${e(recruiter ? a.job.title : a.job.company)}</td><td><span class="match-pill">${a.score === null ? "Pending" : Math.round(a.score) + "%"}</span></td><td>${recruiter ? `<select class="status-select" data-id="${a.id}" aria-label="Application status">${["Applied", "Reviewing", "Interview", "Offer", "Rejected", "Hired"].map((s) => `<option ${s === a.status ? "selected" : ""}>${s}</option>`).join("")}</select>` : `<span class="application-status ${a.status.toLowerCase()}">${e(a.status)}</span>`}</td><td>${new Date(a.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</td></tr>`).join("")}</tbody></table></div>${!applications.length ? empty("Your story is still unfolding.", "Apply for a role to start tracking your progress.", "Find opportunities", "jobs") : ""}</div>`,
-    recruiter ? "Candidates" : "Applications",
+    `${heading(
+      "ONE STEP CLOSER. EVERY TIME.",
+      "Meet your next great hire.",
+      "Discover verified candidates from the talent pool, or review incoming applicants.",
+      `<a class="btn btn-primary" href="#/post-job">${icon("plus")} Post a job</a>`,
+    )}<div class="candidate-tabs-bar"><button class="candidate-tab-btn ${activeCandidateTab === "pool" ? "active" : ""}" data-tab="pool">${icon("users")} Talent Pool (${candidatesData.length})</button><button class="candidate-tab-btn ${activeCandidateTab === "applicants" ? "active" : ""}" data-tab="applicants">${icon("layers")} Direct Applicants (${applications.length})</button></div><div id="talent-pool-view" style="${activeCandidateTab === "pool" ? "" : "display:none"}"><div class="candidate-filter-bar"><div class="candidate-search-wrap">${icon("search")}<input type="text" id="candidate-search" placeholder="Search candidate by name, skill, or experience..." value="${e(candidateSearchQuery)}"></div><div class="candidate-skill-pills"><span style="font-size:12px;color:var(--muted);font-weight:600">Quick Filter:</span><button class="skill-filter-pill ${!candidateFilterSkill ? "active" : ""}" data-skill="">All skills</button>${topSkills.map((sk) => `<button class="skill-filter-pill ${candidateFilterSkill.toLowerCase() === sk.toLowerCase() ? "active" : ""}" data-skill="${sk}">${sk}</button>`).join("")}</div></div><div class="candidates-pool-grid" id="candidates-pool-cards">${renderTalentPool()}</div></div><div id="direct-applicants-view" style="${activeCandidateTab === "applicants" ? "" : "display:none"}"><div class="panel table-panel"><div class="table-responsive"><table class="app-table"><thead><tr><th>Candidate</th><th>Applied Role</th><th>Match fit</th><th>Status</th><th>Applied date</th></tr></thead><tbody>${applications.map((a) => `<tr><td><strong>${e(a.candidate)}</strong></td><td>${e(a.job.title)}</td><td><span class="match-pill">${a.score === null ? "Pending" : Math.round(a.score) + "%"}</span></td><td><select class="status-select" data-id="${a.id}" aria-label="Application status">${["Applied", "Reviewing", "Interview", "Offer", "Rejected", "Hired"].map((s) => `<option ${s === a.status ? "selected" : ""}>${s}</option>`).join("")}</select></td><td>${new Date(a.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</td></tr>`).join("")}</tbody></table></div>${!applications.length ? empty("No direct applicants yet.", "Candidates who apply to your job postings will appear here in the pipeline. Browse the talent pool above to contact candidates directly.", "View Talent Pool", "candidates") : ""}</div></div>`,
+    "Candidates",
   );
 }
 function authPage(register = false): void {
@@ -895,37 +950,106 @@ function landing(): void {
     });
   }
 }
+function recruiterStats(
+  jobsCount: number,
+  candsCount: number,
+  appsCount: number,
+  avgScore: number,
+): string {
+  const values = [
+    [
+      "briefcase-business",
+      "Active roles",
+      jobsCount,
+      "Open roles accepting candidates",
+      "violet",
+    ],
+    [
+      "users",
+      "Candidate pool",
+      candsCount,
+      "Verified profiles with parsed resumes",
+      "mint",
+    ],
+    [
+      "layers",
+      "Direct applicants",
+      appsCount,
+      "Candidates in review pipeline",
+      "blue",
+    ],
+    [
+      "target",
+      "Average fit",
+      Math.round(avgScore) + "%",
+      "Skills & qualification match",
+      "peach",
+    ],
+  ];
+  return `<div class="stats-grid">${values.map(([ic, label, val, note, color]) => `<div class="stat-card reveal"><div class="stat-heading"><span>${label}</span><span class="stat-icon ${color}">${icon(String(ic))}</span></div><div class="stat-value"><b class="stat-number" data-value="${val}">${val}</b></div><p>${note}</p></div>`).join("")}</div>`;
+}
+
 async function recruiterPage(): Promise<void> {
   const pageRender = renderId;
   if (!user) {
     authPage();
     return;
   }
-  const [data, a] = await Promise.all([
+  const [data, a, candidateList] = await Promise.all([
     api<{ items: Job[] }>("/jobs/mine"),
     api<Analytics>("/analytics"),
+    api<CandidateProfile[]>("/candidates"),
   ]);
   analytics = a;
   if (pageRender !== renderId) return;
+
+  const topCandidates = candidateList.slice(0, 4);
+  const avgFit =
+    a.average_score ||
+    (candidateList.length
+      ? candidateList.reduce((sum, c) => sum + (c.match_score || 0), 0) /
+        candidateList.length
+      : 80);
+
   shell(
-    `${heading("GOOD TEAMS START WITH GREAT CONNECTIONS.", "Find your next great hire.", "Connect with people whose skills fit your ambition.", `<a class="btn btn-primary" href="#/post-job">${icon("plus")} Post a job</a>`)}${stats()}${sectionTitle("Your opportunities", "Manage your active job postings.")}<div class="all-jobs-grid">${
+    `${heading(
+      "GOOD TEAMS START WITH GREAT CONNECTIONS.",
+      "Find your next great hire.",
+      "Connect with candidates whose verified skills fit your ambition.",
+      `<a class="btn btn-primary" href="#/post-job">${icon("plus")} Post a job</a>`,
+    )}${recruiterStats(data.items.length, candidateList.length, a.applications, avgFit)}${sectionTitle(
+      "Your opportunities",
+      "Manage your active job postings and applicants.",
+      `<a class="text-link" href="#/post-job">Post new role ${icon("arrow-right")}</a>`,
+    )}<div class="all-jobs-grid">${
       data.items
         .map(
           (j) =>
             `<div class="panel managed-job"><h3>${e(j.title)}</h3><p>${e(j.company)} · ${e(j.location)}</p><div class="strength-chips">${j.skills
-              .slice(0, 3)
+              .slice(0, 4)
               .map((s) => chip(s))
               .join(
                 "",
-              )}</div><div class="manage-actions"><a class="text-link" href="#/candidates/${j.id}">Ranked candidates</a><a href="#/post-job/${j.id}" class="text-link">Edit ${icon("pencil")}</a><button class="text-link danger delete-job" data-id="${j.id}">Close role ${icon("x")}</button></div></div>`,
+              )}</div><div class="manage-actions"><a class="text-link" href="#/candidates">Ranked candidates</a><a href="#/post-job/${j.id}" class="text-link">Edit ${icon("pencil")}</a><button class="text-link danger delete-job" data-id="${j.id}">Close role ${icon("x")}</button></div></div>`,
         )
         .join("") ||
       empty(
         "Your next teammate is out there.",
-        "Post a role to start connecting.",
+        "Post a role to start connecting with verified candidates.",
         "Post your first job",
         "post-job",
       )
+    }</div>${sectionTitle(
+      "Top matched talent pool",
+      "High-fit candidates automatically scored for your open positions.",
+      `<a class="text-link" href="#/candidates">Explore all candidates (${candidateList.length}) ${icon("arrow-right")}</a>`,
+    )}<div class="candidates-preview-grid">${
+      topCandidates
+        .map(
+          (c) =>
+            `<div class="panel candidate-card"><div class="candidate-header"><div class="avatar">${e(initials(c.name))}</div><div><strong>${e(c.name)}</strong><span>${e(c.headline || "Candidate")}</span></div><span class="match-pill">${icon("sparkles")} ${c.match_score ? Math.round(c.match_score) + "% match" : "Verified"}</span></div><p class="candidate-snippet">${e(c.snippet)}</p><div class="candidate-meta"><span class="experience-badge">${icon("clock-3")} ${c.experience_years}y exp</span><div class="strength-chips">${c.skills.slice(0, 3).map((s) => chip(s)).join("")}${c.skills.length > 3 ? chip("+" + (c.skills.length - 3)) : ""}</div></div><div class="candidate-footer"><button class="btn btn-outline btn-sm view-candidate-btn" data-id="${c.id}">View resume</button><a class="btn btn-primary btn-sm" href="mailto:${e(c.email)}?subject=Opportunity%20via%20SkillMatch">Contact ${icon("arrow-up-right")}</a></div></div>`,
+        )
+        .join("")
     }</div>`,
     "Recruiter overview",
   );
@@ -950,7 +1074,7 @@ async function postJob(id?: number): Promise<void> {
       )
       .join(
         "",
-      )}<div class="col-md-6"><label for="employment_type">Employment type</label><select id="employment_type" name="employment_type">${["Full-time", "Part-time", "Contract", "Internship"].map((t) => `<option ${job?.employment_type === t ? "selected" : ""}>${t}</option>`).join("")}</select></div><div class="col-md-6"><label for="salary_min">Minimum salary (optional)</label><input id="salary_min" name="salary_min" type="number" min="0" max="10000000" value="${job?.salary_min || ""}" placeholder="120000"></div><div class="col-md-6"><label for="salary_max">Maximum salary (optional)</label><input id="salary_max" name="salary_max" type="number" min="0" max="10000000" value="${job?.salary_max || ""}" placeholder="160000"></div><div class="col-md-6"><label for="salary_currency">Salary currency</label><input id="salary_currency" name="salary_currency" maxlength="3" pattern="[A-Z]{3}" placeholder="USD, INR, EUR" value="${e(job?.salary_currency || "")}"></div><div class="col-md-6"><label for="salary_interval">Pay period</label><select id="salary_interval" name="salary_interval"><option value="">Not specified</option>${["year", "month", "hour"].map((v) => `<option value="${v}" ${job?.salary_interval === v ? "selected" : ""}>${v}</option>`).join("")}</select></div><div class="col-12"><label for="skills">Required skills</label><input id="skills" name="skills" required value="${e(job?.skills.join(", ") || "")}" placeholder="React, TypeScript, CSS"><small>Separate each skill with a comma. Up to 30 skills.</small></div><div class="col-12"><label for="description">About the opportunity</label><textarea id="description" name="description" required minlength="40" maxlength="20000" rows="8" placeholder="Describe the work, the team, and what success looks like…">${e(job?.description || "")}</textarea></div></div><div class="form-error" role="alert"></div><button class="btn btn-primary" type="submit">${job ? "Save changes" : "Publish opportunity"} ${icon("arrow-up-right")}</button></form>`,
+      )}<div class="col-md-6"><label for="employment_type">Employment type</label><select id="employment_type" name="employment_type">${["Full-time", "Part-time", "Contract", "Internship"].map((t) => `<option ${job?.employment_type === t ? "selected" : ""}>${t}</option>`).join("")}</select></div><div class="col-md-6" style="display:flex;align-items:center;gap:10px;padding-top:28px"><input type="checkbox" id="remote" name="remote" ${job?.remote ? "checked" : ""} style="width:18px;height:18px;cursor:pointer"><label for="remote" style="margin:0;cursor:pointer;font-weight:600">Remote-friendly position</label></div><div class="col-md-6"><label for="salary_min">Minimum salary (optional)</label><input id="salary_min" name="salary_min" type="number" min="0" max="10000000" value="${job?.salary_min || ""}" placeholder="120000"></div><div class="col-md-6"><label for="salary_max">Maximum salary (optional)</label><input id="salary_max" name="salary_max" type="number" min="0" max="10000000" value="${job?.salary_max || ""}" placeholder="160000"></div><div class="col-md-6"><label for="salary_currency">Salary currency</label><input id="salary_currency" name="salary_currency" maxlength="3" pattern="[A-Z]{3}" placeholder="USD, INR, EUR" value="${e(job?.salary_currency || "")}"></div><div class="col-md-6"><label for="salary_interval">Pay period</label><select id="salary_interval" name="salary_interval"><option value="">Not specified</option>${["year", "month", "hour"].map((v) => `<option value="${v}" ${job?.salary_interval === v ? "selected" : ""}>${v}</option>`).join("")}</select></div><div class="col-12"><label for="skills">Required skills</label><input id="skills" name="skills" required value="${e(job?.skills.join(", ") || "")}" placeholder="React, TypeScript, CSS"><small>Separate each skill with a comma. Up to 30 skills.</small></div><div class="col-12"><label for="description">About the opportunity</label><textarea id="description" name="description" required minlength="40" maxlength="20000" rows="8" placeholder="Describe the work, the team, and what success looks like…">${e(job?.description || "")}</textarea></div></div><div class="form-error" role="alert"></div><button class="btn btn-primary" type="submit">${job ? "Save changes" : "Publish opportunity"} ${icon("arrow-up-right")}</button></form>`,
     job ? "Edit job" : "Post a job",
   );
 }
@@ -1029,7 +1153,7 @@ async function navigate(): Promise<void> {
     if (
       user &&
       user?.role !== "candidate" &&
-      ["dashboard", "upload", "matches"].includes(path)
+      ["dashboard", "upload", "matches", "settings", "learning", "saved-searches"].includes(path)
     ) {
       await recruiterPage();
       return;
@@ -1055,7 +1179,7 @@ async function navigate(): Promise<void> {
       const id = Number(path.split("/")[1]);
       await jobDetail(id);
     } else if (path === "analytics") await analyticsPage();
-    else if (path === "applications") await applicationsPage();
+    else if (path === "applications" || path === "candidates") await applicationsPage();
     else if (path === "recruiter") await recruiterPage();
     else if (path.startsWith("post-job"))
       await postJob(Number(path.split("/")[1]) || undefined);
@@ -1327,6 +1451,7 @@ $(document).on("submit", "#post-job-form", function (ev) {
   data.salary_max = data.salary_max === "" ? null : Number(data.salary_max);
   data.salary_currency = data.salary_currency || null;
   data.salary_interval = data.salary_interval || null;
+  data.remote = form.find("#remote").is(":checked");
   if (
     data.salary_min != null &&
     data.salary_max != null &&
@@ -1343,7 +1468,7 @@ $(document).on("submit", "#post-job-form", function (ev) {
       form.data("id") ? "PUT" : "POST",
       data,
     );
-    toast("Your opportunity is ready for its next great match.");
+    toast("Your opportunity is active and scored against candidates.");
     location.hash = "/recruiter";
   });
 });
@@ -1363,6 +1488,88 @@ $(document).on("change", ".status-select", function () {
       toast(err.message, "error");
       void navigate();
     });
+});
+$(document).on("click", ".candidate-tab-btn", function () {
+  $(".candidate-tab-btn").removeClass("active");
+  $(this).addClass("active");
+  const tab = $(this).data("tab") as "pool" | "applicants";
+  activeCandidateTab = tab;
+  if (tab === "pool") {
+    $("#talent-pool-view").show();
+    $("#direct-applicants-view").hide();
+  } else {
+    $("#talent-pool-view").hide();
+    $("#direct-applicants-view").show();
+  }
+});
+$(document).on("input", "#candidate-search", function () {
+  candidateSearchQuery = $(this).val() as string;
+  $("#candidates-pool-cards").html(renderTalentPool());
+  createIcons({ icons });
+});
+$(document).on("click", ".skill-filter-pill", function () {
+  const skill = ($(this).data("skill") || "") as string;
+  candidateFilterSkill = skill.toLowerCase() === candidateFilterSkill.toLowerCase() ? "" : skill;
+  $(".skill-filter-pill").removeClass("active");
+  if (candidateFilterSkill) {
+    $(this).addClass("active");
+  } else {
+    $(`.skill-filter-pill[data-skill=""]`).addClass("active");
+  }
+  $("#candidates-pool-cards").html(renderTalentPool());
+  createIcons({ icons });
+});
+$(document).on("click", "#btn-clear-cand-filters", function () {
+  candidateFilterSkill = "";
+  candidateSearchQuery = "";
+  $("#candidate-search").val("");
+  $(".skill-filter-pill").removeClass("active");
+  $(`.skill-filter-pill[data-skill=""]`).addClass("active");
+  $("#candidates-pool-cards").html(renderTalentPool());
+  createIcons({ icons });
+});
+$(document).on("click", ".view-candidate-btn", function () {
+  const id = Number($(this).data("id"));
+  const cand = cachedCandidates.find((c) => c.id === id);
+  if (!cand) return;
+  const dialog = document.createElement("dialog");
+  dialog.className = "candidate-dialog";
+  dialog.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="avatar" style="width:48px;height:48px;font-size:18px">${e(initials(cand.name))}</div>
+        <div>
+          <h2 style="margin:0 0 4px 0;font-size:20px">${e(cand.name)}</h2>
+          <span style="color:var(--muted);font-size:14px">${e(cand.headline)} · ${e(cand.email)}</span>
+        </div>
+      </div>
+      <button class="icon-btn close-dialog-btn" aria-label="Close dialog">${icon("x")}</button>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:18px">
+      <span class="experience-badge">${icon("clock-3")} ${cand.experience_years} years experience</span>
+      <span class="match-pill">${icon("sparkles")} ${cand.match_score ? Math.round(cand.match_score) + "% match score" : "Verified candidate"}</span>
+      <span class="subtle" style="font-size:13px">Resume file: ${e(cand.resume_filename)}</span>
+    </div>
+    <div style="margin-bottom:20px">
+      <strong style="display:block;margin-bottom:8px;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted)">Verified Skills</strong>
+      <div class="strength-chips">${cand.skills.map((s) => chip(s)).join("")}</div>
+    </div>
+    <div style="margin-bottom:24px">
+      <strong style="display:block;margin-bottom:8px;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted)">Parsed Resume Content</strong>
+      <pre>${e(cand.resume_text)}</pre>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:12px">
+      <button class="btn btn-outline close-dialog-btn">Close</button>
+      <a class="btn btn-primary" href="mailto:${e(cand.email)}?subject=Opportunity%20via%20SkillMatch">Contact Candidate ${icon("arrow-up-right")}</a>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+  dialog.showModal();
+  $(dialog).find(".close-dialog-btn").on("click", () => {
+    dialog.close();
+    dialog.remove();
+  });
+  createIcons({ icons });
 });
 $(document).on("click", ".toggle-user", function () {
   const el = $(this);

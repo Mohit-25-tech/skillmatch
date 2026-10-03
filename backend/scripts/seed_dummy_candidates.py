@@ -136,6 +136,12 @@ def seed():
         active_jobs = list(db.scalars(select(Job).where(Job.active.is_(True))).all())
         logger.info("Found %d active jobs in database for matching.", len(active_jobs))
 
+        # Prioritize recruiter jobs, then top recent jobs
+        recruiter_jobs = [j for j in active_jobs if j.recruiter_id is not None]
+        other_jobs = [j for j in active_jobs if j.recruiter_id is None][:15]
+        target_jobs = recruiter_jobs + other_jobs
+        logger.info("Scoring against %d target jobs per candidate.", len(target_jobs))
+
         for item in DUMMY_CANDIDATES:
             user = db.scalar(select(User).where(User.email == item["email"]))
             if not user:
@@ -185,9 +191,11 @@ def seed():
                 resume.experience_years = item["experience"]
                 db.flush()
 
-            # Score against active jobs
-            for job in active_jobs:
+            # Score against target jobs
+            for job in target_jobs:
                 save_match(db, resume, job)
+            db.commit()
+            logger.info("Committed candidate %s and matches.", user.name)
 
         # Make sure demo_candidate has a resume too if missing
         demo_candidate = db.scalar(select(User).where(User.email == "demo_candidate@gmail.com"))
@@ -205,8 +213,9 @@ def seed():
                 )
                 db.add(cand_res)
                 db.flush()
-                for job in active_jobs:
+                for job in target_jobs:
                     save_match(db, cand_res, job)
+            db.commit()
 
         # Let's also create 1-2 realistic applications for recruiter jobs if recruiter has any jobs
         recruiter = db.scalar(select(User).where(User.role == "recruiter"))

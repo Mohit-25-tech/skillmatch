@@ -79,4 +79,29 @@ export interface Analytics {
   score_distribution: number[];
   in_demand: Record<string, number>;
   applications_over_time: Record<string, number>;
+  candidate_pool?: number;
+  my_jobs_count?: number;
 }
+export interface CandidateProfile {
+  id: number;
+  name: string;
+  email: string;
+  headline: string;
+  experience_years: number;
+  skills: string[];
+  resume_id: number;
+  resume_filename: string;
+  resume_text: string;
+  snippet: string;
+  match_score: number | null;
+  matched_job_title?: string | null;
+  applications: {
+    application_id: number;
+    job_id: number;
+    job_title: string;
+    status: string;
+    applied_at: string;
+  }[];
+  created_at: string;
+}
+
