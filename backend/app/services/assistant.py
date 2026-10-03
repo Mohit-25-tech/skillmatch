@@ -202,7 +202,28 @@ class AddToTrackerArgs(BaseModel):
         return d
 
 
+class AnalyzeSkillGapsArgs(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    target_role: str | None = None
+
+
 ASSISTANT_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "analyze_skill_gaps",
+            "description": "Analyze missing skills, gaps, and strengths across candidate's top scored jobs or for a target role. Call this when user asks what skills are missing in their resume, what they need to learn, or how to bridge gaps.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "target_role": {
+                        "type": "string",
+                        "description": "Optional target role or domain (e.g. 'Machine Learning', 'Backend', 'Software Engineer').",
+                    },
+                },
+            },
+        },
+    },
     {
         "type": "function",
         "function": {
@@ -339,6 +360,7 @@ ASSISTANT_TOOLS = [
 
 def tool_label(name: str) -> str:
     labels = {
+        "analyze_skill_gaps": "Analyzing skill gaps across matches...",
         "retrieve_resume_context": "Searching your resume...",
         "search_jobs": "Searching jobs...",
         "get_job_details": "Fetching job details...",
@@ -351,6 +373,7 @@ def tool_label(name: str) -> str:
 
 def friendly_tool_error(name: str) -> str:
     messages = {
+        "analyze_skill_gaps": "I couldn't analyze your skill gaps right now. Try checking your matches on the My Matches page.",
         "search_jobs": "I couldn't search jobs just now. Try again, or use Find jobs.",
         "retrieve_resume_context": "I couldn't access your resume details right now. Please try again or re-upload your resume.",
         "get_job_details": "I couldn't load the job details right now. Try again, or browse the role in Find jobs.",
@@ -373,6 +396,66 @@ class CareerAssistant:
         self.settings = get_settings()
 
     # --- Tool Implementations ---
+
+    def tool_analyze_skill_gaps(self, target_role: str | None = None) -> ToolResultList:
+        """Aggregate missing skills and gaps across candidate's top matched jobs."""
+        if not self.resume:
+            self.resume = latest_resume(self.db, self.user.id)
+        if not self.resume:
+            return ToolResultList(
+                [{"error": "No resume uploaded. Please upload a resume first."}],
+                status="no_resume",
+                error="No resume uploaded. Please upload a resume first.",
+            )
+
+        query = (
+            select(MatchResult, Job)
+            .join(Job, MatchResult.job_id == Job.id)
+            .where(MatchResult.resume_id == self.resume.id, Job.active.is_(True))
+            .order_by(MatchResult.score.desc())
+            .limit(10)
+        )
+        matches = list(self.db.execute(query).all())
+
+        from collections import Counter
+        missing_counts = Counter()
+        matched_counts = Counter()
+        target_jobs = []
+
+        for mr, job in matches:
+            if target_role and (
+                target_role.casefold() not in job.title.casefold()
+                and target_role.casefold() not in job.description.casefold()
+            ):
+                continue
+            target_jobs.append({
+                "job_id": job.id,
+                "title": job.title,
+                "company": job.company,
+                "score": mr.score,
+            })
+            for s in (mr.missing or []):
+                missing_counts[s] += 1
+            for s in (mr.matched or []):
+                matched_counts[s] += 1
+
+        top_missing = [
+            {"skill": skill, "job_count": count}
+            for skill, count in missing_counts.most_common(6)
+        ]
+        top_strengths = [
+            {"skill": skill, "job_count": count}
+            for skill, count in matched_counts.most_common(6)
+        ]
+
+        results = {
+            "candidate_skills": [s.name for s in (self.resume.skills or [])[:15]],
+            "total_matched_jobs_analyzed": len(target_jobs) or len(matches),
+            "top_missing_skills": top_missing,
+            "top_strengths": top_strengths,
+            "top_roles": target_jobs[:3],
+        }
+        return ToolResultList([results], status="ok", analysis=results)
 
     def tool_retrieve_resume_context(self, query: str = "", top_k: int = 4) -> ToolResultList:
         """Retrieve relevant sections from candidate's resume using vector search.
@@ -734,6 +817,11 @@ class CareerAssistant:
                 with self.db.begin_nested():
                     res = self.tool_suggest_learning(skill=args.skill)
                 return {"ok": True, "result": res}
+            elif name == "analyze_skill_gaps":
+                args = AnalyzeSkillGapsArgs(**raw_args)
+                with self.db.begin_nested():
+                    res = self.tool_analyze_skill_gaps(target_role=args.target_role)
+                return {"ok": True, "result": res}
             elif name == "add_to_tracker":
                 args = AddToTrackerArgs(**raw_args)
                 with self.db.begin_nested():
@@ -747,10 +835,18 @@ class CareerAssistant:
 
     # --- Guardrails & Sanitization ---
 
+    def _sanitize_internal_mentions(self, text: str) -> str:
+        """Sanitize accidental internal tool calling or schema mentions from LLM text."""
+        cleaned = re.sub(r"(?i)\bthe\s+([a-z_]+)\s+tool\s+(has\s+)?(provided|returned)\b", "our search found", text)
+        cleaned = re.sub(r"(?i)\bthe\s+tool\s+call\s+to\b", "our lookup for", cleaned)
+        cleaned = re.sub(r"(?i)\b(in\s+the\s+json\s+object|json\s+response|json\s+properties)\b", "in the verified data", cleaned)
+        cleaned = re.sub(r"(?i)\b(tool\s+call|function\s+call)\b", "search", cleaned)
+        return cleaned
+
     def _validate_guardrails(self, text: str) -> bool:
-        """Check if output violates guardrails: mentions 'tool', 'JSON', or invented shell commands."""
+        """Check if output violates guardrails: mentions explicit function calling or invented shell commands."""
         low = text.casefold()
-        if re.search(r"\b(tool|tools|json|parameter|function\s+call|object\s+with)\b", low):
+        if re.search(r"\b(tool_call|function_call|json\s+object\s+with|the\s+[a-z_]+\s+tool\s+has\s+provided)\b", low):
             return False
         if re.search(r"```(bash|sh|cmd|powershell)?\s*\n.*?(sudo|apt-get|yum|docker run|curl -s|pip install)\b", text, re.DOTALL | re.I):
             return False
@@ -815,7 +911,18 @@ class CareerAssistant:
         tool_data_text = ""
         returned_job_ids: set[int] = set()
 
-        if re.search(r"\b(learn|study|roadmap|course|tutorial|resources?)\b", low):
+        if re.search(r"\b(skill|skills|gap|gaps|missing|improve|strength|strengths)\b", low):
+            g_res = self.tool_analyze_skill_gaps()
+            executed_tools.append({
+                "tool": "analyze_skill_gaps",
+                "args": {},
+                "label": tool_label("analyze_skill_gaps"),
+                "ok": True,
+                "result": g_res,
+            })
+            tool_data_text = "Skill gap and candidate analysis:\n" + json.dumps(list(g_res), indent=2)
+
+        elif re.search(r"\b(learn|study|roadmap|course|tutorial|resources?)\b", low):
             clean = re.sub(r"\b(how|do|i|learn|can|study|roadmap|for|resources?|about|what|is|to)\b", " ", low)
             skill = clean.strip().title() or "Python"
             l_res = self.tool_suggest_learning(skill=skill)
@@ -911,6 +1018,65 @@ class CareerAssistant:
 
         return raw_reply.strip(), executed_tools, sorted(set(valid_citations))
 
+    def _get_candidate_context_summary(self, user_query: str = "") -> tuple[str, list[str]]:
+        """Build comprehensive candidate context: profile, top matches, skill gaps, and RAG chunks."""
+        if not self.resume:
+            self.resume = latest_resume(self.db, self.user.id)
+
+        if not self.resume:
+            return f"Candidate name: {self.user.name}. (No resume uploaded yet).", []
+
+        skills_list = [s.name for s in (self.resume.skills or [])[:15]]
+        skills_str = ", ".join(skills_list)
+
+        # Fetch top matches and missing skills
+        query = (
+            select(MatchResult, Job)
+            .join(Job, MatchResult.job_id == Job.id)
+            .where(MatchResult.resume_id == self.resume.id, Job.active.is_(True))
+            .order_by(MatchResult.score.desc())
+            .limit(5)
+        )
+        matches = list(self.db.execute(query).all())
+
+        from collections import Counter
+        missing_counter = Counter()
+        top_matches_text = []
+        for mr, job in matches:
+            top_matches_text.append(f"- [Job #{job.id}] {job.title} at {job.company} (Match: {mr.score}%)")
+            for m_skill in (mr.missing or []):
+                missing_counter[m_skill] += 1
+
+        common_gaps = [f"{skill} (needed by {cnt} top roles)" for skill, cnt in missing_counter.most_common(5)]
+        gaps_str = ", ".join(common_gaps) if common_gaps else "No major skill gaps detected."
+        matches_str = "\n".join(top_matches_text) if top_matches_text else "None scored yet."
+
+        # RAG-first: Pre-retrieve top relevant chunks for the user query if provided
+        valid_citations = []
+        rag_snippets = []
+        if user_query:
+            try:
+                res_chunks = self.tool_retrieve_resume_context(query=user_query, top_k=3)
+                sections = res_chunks.get("sections", []) if hasattr(res_chunks, "get") else res_chunks
+                for sec in sections:
+                    if isinstance(sec, dict) and "citation" in sec:
+                        valid_citations.append(sec["citation"])
+                        rag_snippets.append(f"{sec['citation']}: {sec.get('text', '')[:300]}")
+            except Exception as e:
+                log.debug("Pre-RAG retrieval error: %s", e)
+
+        rag_text = "\n".join(rag_snippets) if rag_snippets else "None"
+
+        summary = (
+            f"Candidate Name: {self.user.name}\n"
+            f"Documented Resume Skills: {skills_str}\n"
+            f"Documented Experience: {self.resume.experience_years or 0} years\n"
+            f"Top Scored Job Matches:\n{matches_str}\n"
+            f"Top Missing Skills across matches: {gaps_str}\n"
+            f"Relevant Resume Excerpts (RAG):\n{rag_text}"
+        )
+        return summary, valid_citations
+
     # --- Full Turn Processing ---
 
     def process_message(self, message: str) -> dict[str, Any]:
@@ -947,15 +1113,7 @@ class CareerAssistant:
                 "latency_ms": latency_ms,
             }
 
-        candidate_summary = ""
-        if self.resume:
-            skills_str = ", ".join([s.name for s in self.resume.skills[:12]])
-            candidate_summary = (
-                f"Candidate name: {self.user.name}. Documented skills: {skills_str}. "
-                f"Experience: {self.resume.experience_years or 0} years."
-            )
-        else:
-            candidate_summary = f"Candidate name: {self.user.name}. (No resume uploaded yet)."
+        candidate_summary, pre_rag_citations = self._get_candidate_context_summary(user_query=message)
 
         system_prompt = (
             "You are SkillMatch AI Career Assistant, an expert, warm, and highly practical career advisor.\n"
@@ -970,7 +1128,8 @@ class CareerAssistant:
             "8. Keep answers under ~200 words unless asked.\n"
             "9. For learning questions: provide a structured 3-5 step roadmap personalized to the candidate (noting what their resume already shows vs what is missing), then the curated links.\n"
             "10. For job search answers: summarize top opportunities including match %, confidence level, and top missing skills.\n"
-            f"Candidate Profile: {candidate_summary}"
+            "11. For open-ended resume or skill gap questions: leverage the Candidate Career Context below to explain their strengths, top missing skills across market matches, and recommended next steps.\n\n"
+            f"=== CANDIDATE CAREER CONTEXT ===\n{candidate_summary}"
         )
 
         llm_messages: list[dict[str, Any]] = [{"role": "system", "content": system_prompt}]
@@ -1177,6 +1336,33 @@ class CareerAssistant:
                             lines.append(f"- {r['title']}: {r.get('guidance', '')}")
                 return "\n".join(lines)
 
+            if re.search(r"\b(skill|skills|gap|gaps|missing|resume|improve|profile|strengths?)\b", low):
+                g_res = self.tool_analyze_skill_gaps()
+                analysis = g_res.get("analysis", {}) if hasattr(g_res, "get") else (g_res[0] if g_res else {})
+                missing = analysis.get("top_missing_skills", [])
+                strengths = analysis.get("top_strengths", [])
+                roles = analysis.get("top_roles", [])
+                lines = ["### Skill Analysis & Gap Review for Your Profile\n"]
+                if missing:
+                    lines.append("**Top In-Demand Skills Missing from Your Profile:**")
+                    for item in missing:
+                        lines.append(f"- **{item['skill']}** (required by {item['job_count']} of your top matched jobs)")
+                else:
+                    lines.append("No critical skill gaps identified across your top matched roles!")
+
+                if strengths:
+                    lines.append("\n**Key Matched Strengths:**")
+                    strength_names = [s['skill'] for s in strengths[:6]]
+                    lines.append(f"- {', '.join(strength_names)} [Resume: Skills]")
+
+                if roles:
+                    lines.append("\n**Top Scored Opportunities:**")
+                    for r in roles:
+                        lines.append(f"- **[Job #{r['job_id']}] {r['title']}** at **{r['company']}** (Match: {r['score']}%)")
+
+                lines.append("\nWould you like a personalized roadmap to learn any of these skills? Just ask: *'How do I learn <skill>?'*")
+                return "\n".join(lines)
+
             return (
                 "I am your SkillMatch Career Assistant. I can help you search for jobs, analyze match breakdowns, "
                 "track applications on your Kanban board, and identify curated learning paths. How can I assist you today?"
@@ -1189,6 +1375,27 @@ class CareerAssistant:
             if not item.get("ok", True):
                 blocks.append(friendly_tool_error(tool_name))
                 continue
+
+            if tool_name == "analyze_skill_gaps":
+                analysis = res.get("analysis", {}) if hasattr(res, "get") else (res[0] if isinstance(res, list) and res else {})
+                missing = analysis.get("top_missing_skills", [])
+                strengths = analysis.get("top_strengths", [])
+                roles = analysis.get("top_roles", [])
+                lines = ["### Skill Analysis & Gap Breakdown\n"]
+                if missing:
+                    lines.append("**High-Priority Skill Gaps Across Your Matches:**")
+                    for it in missing:
+                        lines.append(f"- **{it['skill']}** (required by {it['job_count']} target opportunities)")
+                if strengths:
+                    lines.append("\n**Your Strongest Overlapping Skills:**")
+                    strength_names = [s['skill'] for s in strengths[:6]]
+                    lines.append(f"- {', '.join(strength_names)} [Resume: Skills]")
+                if roles:
+                    lines.append("\n**Target Scored Roles:**")
+                    for r in roles:
+                        lines.append(f"- **[Job #{r['job_id']}] {r['title']}** at **{r['company']}** (Match: {r['score']}%)")
+                lines.append("\nAsk *'How do I learn <skill>?'* to get a tailored learning roadmap with curated resources.")
+                blocks.append("\n".join(lines))
 
             if tool_name == "search_jobs":
                 jobs = res.get("jobs", []) if hasattr(res, "get") else res

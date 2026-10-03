@@ -328,3 +328,41 @@ def test_assistant_context_with_candidate_resume(test_db):
     assert ctx["candidate_name"] == "Context Candidate"
     assert len(ctx["suggested_prompts"]) > 0
 
+
+def test_tool_analyze_skill_gaps(test_db):
+    from app.models import MatchResult
+    from app.services.assistant import CareerAssistant
+
+    u = User(name="Gap Candidate", email="gap@test.com", password_hash="hash", role="candidate")
+    test_db.add(u)
+    test_db.commit()
+
+    r = Resume(user_id=u.id, filename="gap_resume.pdf", text="Python SQL", is_primary=True, experience_years=1.0)
+    test_db.add(r)
+    test_db.commit()
+
+    j = Job(title="ML Engineer", company="AI Corp", location="Remote", description="Python Docker PyTorch", active=True)
+    test_db.add(j)
+    test_db.commit()
+
+    mr = MatchResult(
+        resume_id=r.id,
+        job_id=j.id,
+        score=72.0,
+        semantic_score=70.0,
+        keyword_score=75.0,
+        matched=["Python"],
+        missing=["Docker", "PyTorch"],
+        method="hybrid",
+    )
+    test_db.add(mr)
+    test_db.commit()
+
+    assistant = CareerAssistant(test_db, u, r)
+    gaps_result = assistant.tool_analyze_skill_gaps()
+    assert gaps_result.status == "ok"
+    analysis = gaps_result.get("analysis", {})
+    missing_names = [m["skill"] for m in analysis.get("top_missing_skills", [])]
+    assert "Docker" in missing_names or "PyTorch" in missing_names
+
+
