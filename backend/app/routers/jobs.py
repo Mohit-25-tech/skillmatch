@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.db import get_db
-from app.models import Application, Job, MatchResult, User, WorkItem, utcnow
+from app.models import Application, Job, MatchResult, Resume, User, WorkItem, utcnow
 from app.repositories.catalog import get_skills, job_public, jobs_page
 from app.schemas import JobInput
 from app.security import optional_user, roles
@@ -87,9 +87,15 @@ def create(
 ) -> dict:
     job = Job(**body.model_dump(exclude={"skills"}), recruiter_id=user.id, skills=get_skills(db, body.skills))
     job.posted_at = utcnow()
+    job.active = True
+    job.is_demo = False
     enrich_native(db, job)
     db.add(job)
     db.flush()
+    # Immediate scoring against latest candidate resumes so candidate matches and dashboard show this job right away
+    latest_subq = select(func.max(Resume.id).label("max_id")).group_by(Resume.user_id).subquery()
+    for resume in db.scalars(select(Resume).where(Resume.id.in_(select(latest_subq.c.max_id)))).all():
+        save_match(db, resume, job)
     db.add(WorkItem(kind="catalog", payload={"job_ids": [job.id]}))
     db.commit()
     return job_public(job)

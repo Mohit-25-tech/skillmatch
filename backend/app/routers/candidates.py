@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -261,3 +261,130 @@ def status(
     )
     db.commit()
     return {"status": application.status}
+
+
+@router.get("/recruiter/candidates")
+@router.get("/candidates")
+def list_candidates(
+    q: str = Query("", max_length=100),
+    skill: str = Query("", max_length=100),
+    user: User = Depends(roles("recruiter", "admin")),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    latest_subq = (
+        select(func.max(Resume.id).label("max_id"))
+        .group_by(Resume.user_id)
+        .subquery()
+    )
+
+    stmt = (
+        select(User, Resume)
+        .join(Resume, Resume.user_id == User.id)
+        .where(
+            User.role == "candidate",
+            User.active.is_(True),
+            Resume.id.in_(select(latest_subq.c.max_id)),
+        )
+    )
+
+    if q.strip():
+        term = f"%{q.strip()}%"
+        stmt = stmt.where(or_(User.name.ilike(term), Resume.text.ilike(term)))
+
+    if skill.strip():
+        stmt = stmt.where(Resume.skills.any(Skill.name.ilike(f"%{skill.strip()}%")))
+
+    rows = db.execute(stmt).all()
+
+    recruiter_jobs = db.scalars(
+        select(Job).where(Job.recruiter_id == user.id, Job.active.is_(True))
+    ).all()
+    recruiter_job_ids = [j.id for j in recruiter_jobs]
+
+    app_rows = db.scalars(
+        select(Application)
+        .join(Job)
+        .where(Job.recruiter_id == user.id, Application.status != "Saved")
+    ).all()
+    applied_by_user: dict[int, list[dict]] = {}
+    for app in app_rows:
+        applied_by_user.setdefault(app.user_id, []).append({
+            "application_id": app.id,
+            "job_id": app.job_id,
+            "job_title": app.job.title if app.job else "Direct Application",
+            "status": app.status,
+            "applied_at": app.created_at.isoformat(),
+        })
+
+    candidates_list = []
+    for cand_user, resume in rows:
+        score = None
+        top_job_title = None
+        if recruiter_job_ids:
+            top_match = db.scalar(
+                select(MatchResult)
+                .join(Job, Job.id == MatchResult.job_id)
+                .where(
+                    MatchResult.resume_id == resume.id,
+                    MatchResult.job_id.in_(recruiter_job_ids),
+                )
+                .order_by(MatchResult.score.desc())
+                .limit(1)
+            )
+            if top_match:
+                score = round(top_match.score, 1)
+                top_job = db.get(Job, top_match.job_id)
+                top_job_title = top_job.title if top_job else None
+
+        if score is None:
+            top_match = db.scalar(
+                select(MatchResult)
+                .join(Job, Job.id == MatchResult.job_id)
+                .where(
+                    MatchResult.resume_id == resume.id,
+                    Job.active.is_(True),
+                )
+                .order_by(MatchResult.score.desc())
+                .limit(1)
+            )
+            if top_match:
+                score = round(top_match.score, 1)
+                top_job = db.get(Job, top_match.job_id)
+                top_job_title = top_job.title if top_job else None
+
+        skill_names = [s.name for s in resume.skills]
+        prefs = cand_user.preferences or {}
+        preferred_roles = prefs.get("preferred_roles", [])
+        headline = (
+            ", ".join(preferred_roles)
+            if preferred_roles
+            else (f"{skill_names[0]} Specialist" if skill_names else "Candidate")
+        )
+
+        clean_lines = [
+            line.strip()
+            for line in resume.text.splitlines()
+            if line.strip() and len(line.strip()) > 20 and not line.strip().startswith("#")
+        ]
+        snippet = clean_lines[0] if clean_lines else (resume.text[:180] + "...")
+
+        candidates_list.append({
+            "id": cand_user.id,
+            "name": cand_user.name,
+            "email": cand_user.email,
+            "headline": headline,
+            "experience_years": resume.experience_years or 3.0,
+            "skills": skill_names,
+            "resume_id": resume.id,
+            "resume_filename": resume.filename,
+            "resume_text": resume.text,
+            "snippet": snippet,
+            "match_score": score,
+            "matched_job_title": top_job_title,
+            "applications": applied_by_user.get(cand_user.id, []),
+            "created_at": cand_user.created_at.isoformat(),
+        })
+
+    candidates_list.sort(key=lambda c: (c["match_score"] or 0, c["experience_years"] or 0), reverse=True)
+    return candidates_list
+

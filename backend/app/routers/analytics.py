@@ -62,6 +62,8 @@ def analytics(user: User = Depends(current_user), db: Session = Depends(get_db))
         "applications_over_time": dict(
             sorted(Counter(a.created_at.strftime("%Y-%m-%d") for a in applications).items())
         ),
+        "candidate_pool": db.scalar(select(func.count(func.distinct(Resume.user_id)))) or 0,
+        "my_jobs_count": db.scalar(select(func.count(Job.id)).where(Job.recruiter_id == user.id, Job.active.is_(True))) or 0 if user.role == "recruiter" else 0,
     }
 
 
