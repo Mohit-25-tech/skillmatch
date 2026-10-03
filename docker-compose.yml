@@ -1,0 +1,66 @@
+services:
+  api:
+    build: ./backend
+    env_file: .env
+    volumes:
+      - model-cache:/home/app/.cache
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+  web:
+    build: ./frontend
+    ports: ["8080:8080"]
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, -q, --spider, http://127.0.0.1:8080/]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+  worker:
+    build: ./backend
+    command: [python, -m, app.worker]
+    env_file: .env
+    volumes:
+      - model-cache:/home/app/.cache
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -m, app.worker_health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+  mailpit:
+    image: axllent/mailpit:v1.27
+    profiles: [mail]
+    user: "10001:10001"
+    ports: ["8025:8025"]
+    healthcheck:
+      test: [CMD, /mailpit, readyz]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  dev-db:
+    image: pgvector/pgvector:pg17
+    profiles: [dev]
+    environment:
+      POSTGRES_USER: skillmatch
+      POSTGRES_PASSWORD: ${DEV_DB_PASSWORD:?Set DEV_DB_PASSWORD}
+      POSTGRES_DB: skillmatch
+    volumes: ["dev-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U skillmatch"]
+      interval: 5s
+      retries: 10
+volumes:
+  model-cache:
+  dev-data:

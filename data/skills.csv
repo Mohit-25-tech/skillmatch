@@ -1,0 +1,301 @@
+name,category
+Python,Languages
+JavaScript,Languages
+TypeScript,Languages
+Java,Languages
+C,Languages
+C++,Languages
+C#,Languages
+Go,Languages
+Rust,Languages
+Ruby,Languages
+PHP,Languages
+Swift,Languages
+Kotlin,Languages
+Dart,Languages
+Scala,Languages
+R,Languages
+MATLAB,Languages
+Julia,Languages
+Perl,Languages
+Lua,Languages
+Haskell,Languages
+Elixir,Languages
+Clojure,Languages
+F#,Languages
+Objective-C,Languages
+Solidity,Languages
+Bash,Languages
+PowerShell,Languages
+SQL,Languages
+Assembly,Languages
+HTML,Frontend
+CSS,Frontend
+React,Frontend
+Vue,Frontend
+Angular,Frontend
+Svelte,Frontend
+Next.js,Frontend
+Nuxt,Frontend
+Astro,Frontend
+Remix,Frontend
+jQuery,Frontend
+Bootstrap,Frontend
+Tailwind CSS,Frontend
+Sass,Frontend
+Less,Frontend
+Webpack,Frontend
+Vite,Frontend
+Rollup,Frontend
+esbuild,Frontend
+Babel,Frontend
+Redux,Frontend
+Zustand,Frontend
+MobX,Frontend
+React Query,Frontend
+GraphQL,Frontend
+Web Components,Frontend
+PWA,Frontend
+Web Accessibility,Frontend
+Responsive Design,Frontend
+Three.js,Frontend
+Node.js,Backend
+Express,Backend
+FastAPI,Backend
+Django,Backend
+Flask,Backend
+Spring Boot,Backend
+Laravel,Backend
+Ruby on Rails,Backend
+ASP.NET,Backend
+NestJS,Backend
+Koa,Backend
+Hapi,Backend
+Gin,Backend
+Fiber,Backend
+Actix,Backend
+Phoenix,Backend
+REST APIs,Backend
+gRPC,Backend
+WebSockets,Backend
+OAuth,Backend
+JWT,Backend
+Microservices,Backend
+Event Sourcing,Backend
+CQRS,Backend
+Domain Driven Design,Backend
+API Design,Backend
+Celery,Backend
+RabbitMQ,Backend
+Kafka,Backend
+Nginx,Backend
+PostgreSQL,Data
+MySQL,Data
+SQLite,Data
+MongoDB,Data
+Redis,Data
+Elasticsearch,Data
+DynamoDB,Data
+Cassandra,Data
+Neo4j,Data
+CouchDB,Data
+MariaDB,Data
+Oracle,Data
+SQL Server,Data
+Snowflake,Data
+BigQuery,Data
+Redshift,Data
+Databricks,Data
+Apache Spark,Data
+Hadoop,Data
+Airflow,Data
+dbt,Data
+Pandas,Data
+NumPy,Data
+Polars,Data
+Dask,Data
+ETL,Data
+Data Modeling,Data
+Data Warehousing,Data
+Data Governance,Data
+Data Quality,Data
+Machine Learning,AI & ML
+Deep Learning,AI & ML
+TensorFlow,AI & ML
+PyTorch,AI & ML
+Scikit-learn,AI & ML
+Keras,AI & ML
+XGBoost,AI & ML
+LightGBM,AI & ML
+CatBoost,AI & ML
+spaCy,AI & ML
+NLTK,AI & ML
+Transformers,AI & ML
+Computer Vision,AI & ML
+Natural Language Processing,AI & ML
+Reinforcement Learning,AI & ML
+Recommendation Systems,AI & ML
+Time Series,AI & ML
+Feature Engineering,AI & ML
+Model Deployment,AI & ML
+MLOps,AI & ML
+MLflow,AI & ML
+Kubeflow,AI & ML
+Hugging Face,AI & ML
+LangChain,AI & ML
+Vector Databases,AI & ML
+Prompt Engineering,AI & ML
+RAG,AI & ML
+Model Evaluation,AI & ML
+Statistics,AI & ML
+A/B Testing,AI & ML
+AWS,Cloud & DevOps
+Azure,Cloud & DevOps
+Google Cloud,Cloud & DevOps
+Docker,Cloud & DevOps
+Kubernetes,Cloud & DevOps
+Terraform,Cloud & DevOps
+Ansible,Cloud & DevOps
+Pulumi,Cloud & DevOps
+CloudFormation,Cloud & DevOps
+Jenkins,Cloud & DevOps
+GitHub Actions,Cloud & DevOps
+GitLab CI,Cloud & DevOps
+CircleCI,Cloud & DevOps
+Argo CD,Cloud & DevOps
+Helm,Cloud & DevOps
+Prometheus,Cloud & DevOps
+Grafana,Cloud & DevOps
+Datadog,Cloud & DevOps
+Linux,Cloud & DevOps
+Unix,Cloud & DevOps
+Networking,Cloud & DevOps
+Load Balancing,Cloud & DevOps
+Serverless,Cloud & DevOps
+AWS Lambda,Cloud & DevOps
+Cloud Security,Cloud & DevOps
+SRE,Cloud & DevOps
+Incident Response,Cloud & DevOps
+Observability,Cloud & DevOps
+CI/CD,Cloud & DevOps
+Git,Cloud & DevOps
+Figma,Design
+Sketch,Design
+Adobe XD,Design
+Photoshop,Design
+Illustrator,Design
+InDesign,Design
+After Effects,Design
+Blender,Design
+Cinema 4D,Design
+Framer,Design
+Webflow,Design
+UI Design,Design
+UX Research,Design
+Interaction Design,Design
+Design Systems,Design
+Prototyping,Design
+Wireframing,Design
+Information Architecture,Design
+Usability Testing,Design
+User Interviews,Design
+Journey Mapping,Design
+Service Design,Design
+Visual Design,Design
+Typography,Design
+Color Theory,Design
+Motion Design,Design
+Design Thinking,Design
+Product Design,Design
+Content Design,Design
+Accessibility Audits,Design
+Product Management,Product & Business
+Agile,Product & Business
+Scrum,Product & Business
+Kanban,Product & Business
+Jira,Product & Business
+Confluence,Product & Business
+Notion,Product & Business
+Roadmapping,Product & Business
+Stakeholder Management,Product & Business
+Market Research,Product & Business
+Competitive Analysis,Product & Business
+Business Analysis,Product & Business
+Requirements Gathering,Product & Business
+OKRs,Product & Business
+KPIs,Product & Business
+Product Analytics,Product & Business
+Amplitude,Product & Business
+Mixpanel,Product & Business
+Google Analytics,Product & Business
+Looker,Product & Business
+Tableau,Product & Business
+Power BI,Product & Business
+Excel,Product & Business
+Financial Modeling,Product & Business
+Pricing Strategy,Product & Business
+Go-to-Market,Product & Business
+Growth Strategy,Product & Business
+Customer Success,Product & Business
+Salesforce,Product & Business
+HubSpot,Product & Business
+Pytest,Testing & Security
+Jest,Testing & Security
+Vitest,Testing & Security
+Cypress,Testing & Security
+Playwright,Testing & Security
+Selenium,Testing & Security
+JUnit,Testing & Security
+Mocha,Testing & Security
+Chai,Testing & Security
+Testing Library,Testing & Security
+Test Automation,Testing & Security
+Unit Testing,Testing & Security
+Integration Testing,Testing & Security
+Load Testing,Testing & Security
+k6,Testing & Security
+JMeter,Testing & Security
+Postman,Testing & Security
+Insomnia,Testing & Security
+OWASP,Testing & Security
+Penetration Testing,Testing & Security
+Threat Modeling,Testing & Security
+Cryptography,Testing & Security
+Identity Management,Testing & Security
+Network Security,Testing & Security
+SOC 2,Testing & Security
+ISO 27001,Testing & Security
+GDPR,Testing & Security
+Security Auditing,Testing & Security
+SonarQube,Testing & Security
+SAST,Testing & Security
+Communication,Professional
+Leadership,Professional
+Teamwork,Professional
+Problem Solving,Professional
+Critical Thinking,Professional
+Project Management,Professional
+Time Management,Professional
+Mentoring,Professional
+Technical Writing,Professional
+Public Speaking,Professional
+Negotiation,Professional
+Conflict Resolution,Professional
+Adaptability,Professional
+Collaboration,Professional
+Remote Collaboration,Professional
+Presentation Skills,Professional
+Documentation,Professional
+Code Review,Professional
+System Design,Professional
+Algorithms,Professional
+Data Structures,Professional
+Object Oriented Programming,Professional
+Functional Programming,Professional
+Distributed Systems,Professional
+Performance Optimization,Professional
+Debugging,Professional
+Research,Professional
+Decision Making,Professional
+Strategic Planning,Professional
+Customer Empathy,Professional

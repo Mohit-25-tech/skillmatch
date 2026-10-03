@@ -1,0 +1,87 @@
+# Add boards you are permitted to republish. No arbitrary URLs are accepted.
+# General feeds start disabled; curated engineering boards below are enabled.
+sources:
+  - key: greenhouse-example
+    kind: greenhouse
+    enabled: false
+    interval_minutes: 360
+    config: {slug: YOUR_COMPANY_SLUG, company: YOUR_COMPANY_NAME}
+  - key: lever-example
+    kind: lever
+    enabled: false
+    interval_minutes: 360
+    config: {slug: YOUR_COMPANY_SLUG, region: global}
+  - key: remotive
+    kind: remotive
+    enabled: false
+    interval_minutes: 720
+    config: {role_scope: cse}
+  - key: arbeitnow
+    kind: arbeitnow
+    enabled: false
+    interval_minutes: 360
+    config: {role_scope: cse}
+  - key: remoteok
+    kind: remoteok
+    enabled: false
+    interval_minutes: 720
+    config: {role_scope: cse}
+  - key: adzuna-india
+    kind: adzuna
+    enabled: false
+    interval_minutes: 360
+    config: {country: in, query: software}
+  - key: adzuna-uk
+    kind: adzuna
+    enabled: false
+    interval_minutes: 360
+    config: {country: gb, query: software}
+  - key: hackernews
+    kind: hackernews
+    enabled: false
+    interval_minutes: 1440
+    config: {thread_id: 0, max_comments: 200}
+
+  # Initial curated engineering boards. Existing DB settings remain authoritative.
+  - key: greenhouse-togetherai
+    kind: greenhouse
+    enabled: true
+    interval_minutes: 720
+    config: {slug: togetherai, company: Together AI, role_scope: cse}
+  - key: lever-palantir
+    kind: lever
+    enabled: true
+    interval_minutes: 720
+    config: {slug: palantir, company: Palantir, region: global, role_scope: cse}
+  - key: ashby-cohere
+    kind: ashby
+    enabled: true
+    interval_minutes: 720
+    config: {slug: cohere, company: Cohere, role_scope: cse}
+
+  # Curated Indian-startup & India-focused engineering boards
+  - key: greenhouse-browserstack
+    kind: greenhouse
+    enabled: true
+    interval_minutes: 720
+    config: {slug: browserstack, company: BrowserStack, role_scope: cse}
+  - key: greenhouse-postman
+    kind: greenhouse
+    enabled: true
+    interval_minutes: 720
+    config: {slug: postman, company: Postman, role_scope: cse}
+  - key: lever-hasura
+    kind: lever
+    enabled: true
+    interval_minutes: 720
+    config: {slug: hasura, company: Hasura, region: global, role_scope: cse}
+  - key: ashby-cred
+    kind: ashby
+    enabled: true
+    interval_minutes: 720
+    config: {slug: cred, company: CRED, role_scope: cse}
+  - key: ashby-razorpay
+    kind: ashby
+    enabled: true
+    interval_minutes: 720
+    config: {slug: razorpay, company: Razorpay, role_scope: cse}

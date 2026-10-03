@@ -1,0 +1,39 @@
+{
+  "name": "skillmatch-ai",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/copy-docs.mjs",
+    "prebuild": "node scripts/copy-docs.mjs",
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run src",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource/dm-sans": "^5.2.5",
+    "@fontsource/manrope": "^5.2.5",
+    "@popperjs/core": "^2.11.8",
+    "bootstrap": "^5.3.3",
+    "chart.js": "^4.4.8",
+    "gsap": "^3.12.7",
+    "jquery": "^3.7.1",
+    "lucide": "^0.468.0",
+    "sortablejs": "^1.15.7",
+    "swagger-ui-dist": "^5.33.0",
+    "three": "^0.174.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "@types/jquery": "^3.5.32",
+    "@types/sortablejs": "^1.15.9",
+    "@types/three": "^0.174.0",
+    "prettier": "^3.9.9",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0",
+    "vitest": "^4.1.11"
+  }
+}

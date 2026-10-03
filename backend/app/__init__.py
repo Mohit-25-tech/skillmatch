@@ -1,0 +1,1 @@
+"""SkillMatch AI application."""
